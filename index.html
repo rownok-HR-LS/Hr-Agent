@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HR Agent</title>
+  <meta name="description" content="An AI assistant for HR: screen CVs, answer employee questions and draft HR letters." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232f5d50'/><text x='16' y='21' font-family='Arial' font-weight='700' font-size='13' text-anchor='middle' fill='white'>HR</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.4.16/purify.min.js"></script>
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">HR</span>
+        <div>
+          <div class="brand-name">HR Agent</div>
+          <div class="brand-sub" id="brand-company">AI assistant for HR</div>
+        </div>
+      </div>
+      <nav class="nav" aria-label="Main">
+        <button data-nav="home" class="active"><span class="i">⌂</span><span>Home</span></button>
+        <button data-nav="screen"><span class="i">◎</span><span>Screen CVs</span></button>
+        <button data-nav="ask"><span class="i">?</span><span>Ask HR</span></button>
+        <button data-nav="letters"><span class="i">✉</span><span>Draft letters</span></button>
+        <button data-nav="policies"><span class="i">▤</span><span>Policies</span></button>
+        <button data-nav="settings"><span class="i">⚙</span><span>Settings</span></button>
+      </nav>
+      <p class="sidebar-foot">Your data stays in this browser and is only sent to Anthropic's API when you run a task.</p>
+    </aside>
+
+    <main class="main">
+      <!-- HOME -->
+      <section class="view active" data-view="home">
+        <header class="view-head">
+          <h1>Good to see you<span id="home-company"></span>.</h1>
+          <p class="lead">What do you need help with today?</p>
+        </header>
+        <div class="setup card" id="setup-card" hidden>
+          <h2>Finish setting up</h2>
+          <ul class="checklist" id="checklist"></ul>
+        </div>
+        <div class="tiles">
+          <button class="tile" data-nav="screen">
+            <span class="tile-icon">◎</span>
+            <h3>Screen CVs</h3>
+            <p>Upload CVs and a job description. Get a ranked shortlist with evidence, gaps and interview questions.</p>
+          </button>
+          <button class="tile" data-nav="ask">
+            <span class="tile-icon">?</span>
+            <h3>Ask HR</h3>
+            <p>Answer employee questions about leave, benefits and procedures, based on your own policy documents.</p>
+          </button>
+          <button class="tile" data-nav="letters">
+            <span class="tile-icon">✉</span>
+            <h3>Draft letters</h3>
+            <p>Offer, appointment, rejection, promotion, experience, warning letters and more, ready to edit and send.</p>
+          </button>
+        </div>
+      </section>
+
+      <!-- SCREEN CVS -->
+      <section class="view" data-view="screen">
+        <header class="view-head">
+          <h1>Screen CVs</h1>
+          <p class="lead">Rank candidates against a job description. The AI supports your decision; you make the final call.</p>
+        </header>
+        <div class="grid-2">
+          <div class="card">
+            <h2>1. The job</h2>
+            <label class="field">Job title
+              <input id="job-title" placeholder="e.g. HR Business Partner" />
+            </label>
+            <label class="field">Job description and requirements
+              <textarea id="job-desc" rows="10" placeholder="Paste the job description, including must-have and nice-to-have requirements."></textarea>
+            </label>
+            <div class="row">
+              <label class="btn ghost small file-btn">Load from file
+                <input type="file" id="job-file" accept=".pdf,.docx,.txt,.md" hidden />
+              </label>
+            </div>
+          </div>
+          <div class="card">
+            <h2>2. The CVs</h2>
+            <label class="dropzone" id="cv-drop">
+              <input type="file" id="cv-files" multiple accept=".pdf,.docx,.txt,.md" hidden />
+              <strong>Drop CVs here or click to browse</strong>
+              <span>PDF, Word (.docx) or text. Add as many as you like.</span>
+            </label>
+            <ul class="file-list" id="cv-list"></ul>
+            <details class="paste">
+              <summary>Or paste a CV as text</summary>
+              <label class="field">Label
+                <input id="cv-paste-name" placeholder="e.g. Candidate from LinkedIn" />
+              </label>
+              <textarea id="cv-paste" rows="6" placeholder="Paste CV text"></textarea>
+              <button class="btn ghost small" id="cv-paste-add">Add pasted CV</button>
+            </details>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="screen-run">Screen CVs</button>
+          <button class="btn ghost" id="screen-stop" hidden>Stop</button>
+          <span class="status" id="screen-status"></span>
+        </div>
+        <p class="note">Fairness: the AI is told to ignore name, age, gender, nationality, religion, family status, photos and other protected characteristics, and to judge only job-relevant evidence. Always review results yourself.</p>
+        <div class="results-head" id="results-head" hidden>
+          <h2>Results</h2>
+          <button class="btn ghost small" id="export-csv">Export CSV</button>
+        </div>
+        <div class="results" id="results"></div>
+      </section>
+
+      <!-- ASK HR -->
+      <section class="view view-chat" data-view="ask">
+        <header class="view-head row-between">
+          <div>
+            <h1>Ask HR</h1>
+            <p class="lead" id="ask-policy-note"></p>
+          </div>
+          <button class="btn ghost small" id="chat-clear">New conversation</button>
+        </header>
+        <div class="chat-log" id="chat-log" aria-live="polite"></div>
+        <form class="chat-form" id="chat-form">
+          <textarea id="chat-input" rows="2" placeholder="e.g. How many days of annual leave do I get in my first year?"></textarea>
+          <div class="chat-buttons">
+            <button class="btn ghost" type="button" id="chat-stop" hidden>Stop</button>
+            <button class="btn primary" type="submit" id="chat-send">Send</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- LETTERS -->
+      <section class="view" data-view="letters">
+        <header class="view-head">
+          <h1>Draft letters</h1>
+          <p class="lead">Fill in what you know. Anything missing becomes a [placeholder] you can complete.</p>
+        </header>
+        <div class="grid-letter">
+          <form class="card" id="letter-form">
+            <label class="field">Letter type
+              <select id="letter-type"></select>
+            </label>
+            <div class="grid-fields">
+              <label class="field">Recipient name
+                <input id="lf-recipient" placeholder="e.g. Ayesha Rahman" />
+              </label>
+              <div id="letter-fields" class="contents"></div>
+            </div>
+            <label class="field">Key details
+              <textarea id="lf-details" rows="5" placeholder="Anything the letter must include: reasons, benefits, notice period, conditions, next steps..."></textarea>
+            </label>
+            <div class="grid-fields">
+              <label class="field">Tone
+                <select id="lf-tone">
+                  <option>Formal and professional</option>
+                  <option>Warm and friendly</option>
+                  <option>Firm and neutral</option>
+                </select>
+              </label>
+              <label class="field">Signed by
+                <input id="lf-signatory" placeholder="Name, title" />
+              </label>
+            </div>
+            <p class="warning" id="letter-warning" hidden>Warning and termination letters carry legal risk. Check the draft against your policy and local labour law, and consider a legal review before sending.</p>
+            <div class="actions">
+              <button class="btn primary" type="submit" id="letter-run">Draft letter</button>
+              <button class="btn ghost" type="button" id="letter-stop" hidden>Stop</button>
+            </div>
+          </form>
+          <div class="card letter-out">
+            <div class="row-between">
+              <h2>Draft</h2>
+              <div class="row">
+                <button class="btn ghost small" id="letter-copy">Copy</button>
+                <button class="btn ghost small" id="letter-word">Download Word</button>
+                <button class="btn ghost small" id="letter-print">Print / PDF</button>
+              </div>
+            </div>
+            <textarea id="letter-output" class="letter-text" placeholder="Your letter will appear here. You can edit it directly."></textarea>
+            <form class="refine" id="letter-refine">
+              <input id="refine-input" placeholder="Ask for changes, e.g. make it shorter, add a probation clause" />
+              <button class="btn ghost" type="submit">Revise</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- POLICIES -->
+      <section class="view" data-view="policies">
+        <header class="view-head">
+          <h1>Policies</h1>
+          <p class="lead">Add your handbook and policies. Ask HR answers from these documents.</p>
+        </header>
+        <div class="grid-2">
+          <div class="card">
+            <h2>Add a policy</h2>
+            <label class="dropzone" id="policy-drop">
+              <input type="file" id="policy-files" multiple accept=".pdf,.docx,.txt,.md" hidden />
+              <strong>Drop files here or click to browse</strong>
+              <span>PDF, Word (.docx) or text</span>
+            </label>
+            <p class="or">or paste it</p>
+            <label class="field">Title
+              <input id="policy-title" placeholder="e.g. Leave Policy 2026" />
+            </label>
+            <textarea id="policy-text" rows="8" placeholder="Paste the policy text"></textarea>
+            <button class="btn primary" id="policy-add">Save policy</button>
+          </div>
+          <div class="card">
+            <h2>Saved policies</h2>
+            <ul class="policy-list" id="policy-list"></ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="view" data-view="settings">
+        <header class="view-head">
+          <h1>Settings</h1>
+          <p class="lead">Saved in this browser only.</p>
+        </header>
+        <form class="card settings" id="settings-form">
+          <h2>AI connection</h2>
+          <label class="field">Anthropic API key
+            <div class="row">
+              <input id="s-apiKey" type="password" autocomplete="off" placeholder="sk-ant-..." />
+              <button class="btn ghost small" type="button" id="toggle-key">Show</button>
+            </div>
+            <span class="hint">Create a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. It's stored only in this browser. Don't use this app on a shared computer.</span>
+          </label>
+          <label class="field">Model
+            <select id="s-model"></select>
+          </label>
+
+          <h2>Company details</h2>
+          <p class="hint">Used in letters and when answering employee questions.</p>
+          <div class="grid-fields">
+            <label class="field">Company name <input id="s-companyName" /></label>
+            <label class="field">HR contact <input id="s-hrContact" placeholder="e.g. hr@company.com, ext. 204" /></label>
+            <label class="field">Default signatory name <input id="s-signatoryName" /></label>
+            <label class="field">Signatory title <input id="s-signatoryTitle" placeholder="e.g. HR Manager" /></label>
+          </div>
+          <label class="field">Company address <textarea id="s-companyAddress" rows="2"></textarea></label>
+
+          <div class="actions">
+            <button class="btn primary" type="submit">Save</button>
+            <button class="btn ghost" type="button" id="test-key">Test connection</button>
+            <span class="status" id="settings-status"></span>
+          </div>
+          <hr />
+          <button class="btn danger small" type="button" id="clear-all">Delete all data from this browser</button>
+        </form>
+      </section>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" hidden></div>
+</body>
+</html>
